@@ -1,6 +1,6 @@
 function ExpenseList({ expenses, handleDelete }) {
   if (!expenses.length) return <p>No expenses added yet.</p>;
-  const total = expenses.reduce((sum, item) => item.amount + sum, 0);
+  const total = expenses.reduce((sum, item) => Number(item.amount||0 )+ sum, 0);
 
   return (
     
@@ -16,7 +16,7 @@ function ExpenseList({ expenses, handleDelete }) {
             <div className="text-muted small">{exp.category}</div>
           </div>
           <div className="text-end">
-            <span className="fw-bold mb-2">${exp.amount.toFixed(2)}</span>
+            <span className="fw-bold mb-2">${Number(exp.amount||0).toFixed(2)}</span>
             <br />
             <button
               className="btn btn-sm btn-danger"
@@ -29,7 +29,7 @@ function ExpenseList({ expenses, handleDelete }) {
       ))}
 
       <h5 className="list-group-item d-flex justify-content-between ">
-        Total Expenditure is <span>${total.toFixed(2)}</span>{" "}
+        Total Expenditure is <span>${Number(total||0).toFixed(2)}</span>{" "}
       </h5>
     </ul>
   );

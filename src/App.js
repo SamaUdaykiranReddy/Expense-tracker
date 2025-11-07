@@ -48,6 +48,7 @@ function App() {
         >
           <option value="All">All</option>
           <option value="Food">Food</option>
+           <option value="Travel">Travel</option>
           <option value="Basic">Basic</option>
           <option value="Groceries">Groceries</option>
           <option value="Entertainment">Entertainment</option>

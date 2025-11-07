@@ -38,6 +38,7 @@ function ExpenseForm({ addExpense }) {
       >
         <option>Select the Category</option>
         <option value="Basic">Basic</option>
+        <option value="Travel">Travel</option>
         <option value="Food">Food</option>
         <option value="Entertainment">Entertainment</option>
         <option value="Groceries">Groceries</option>

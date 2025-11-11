@@ -1,6 +1,16 @@
+// src/App.js
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "./firebaseConfig";
+import { auth, db } from "./firebaseConfig";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+
 import SignUp from "./components/signUp";
 import LogIn from "./components/LogIn";
 import ExpenseForm from "./components/ExpenseForm";
@@ -10,6 +20,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [expenses, setExpenses] = useState([]);
 
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -17,12 +28,35 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Fetch user-specific expenses from Firestore
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const q = query(
+      collection(db, "expenses"),
+      where("userId", "==", currentUser.uid)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setExpenses(data);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Logout function
   const handleLogout = () => signOut(auth);
 
-  const addExpense = (expense) => {
-    setExpenses((prev) => [...prev, expense]);
+  // Delete expense from Firestore
+  const handleDelete = async (id) => {
+    try {
+      await deleteDoc(doc(db, "expenses", id));
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+    }
   };
 
+  // Show SignUp / LogIn if user is not logged in
   if (!currentUser) {
     return (
       <div>
@@ -33,6 +67,7 @@ function App() {
     );
   }
 
+  // Main App UI
   return (
     <div className="container mt-4">
       <h2>Expense Tracker</h2>
@@ -40,8 +75,12 @@ function App() {
       <button className="btn btn-warning mb-3" onClick={handleLogout}>
         Logout
       </button>
-      <ExpenseForm addExpense={addExpense} currentUser={currentUser} />
-      <ExpenseList expenses={expenses} currentUser={currentUser} />
+
+      {/* Expense Form writes directly to Firestore */}
+      <ExpenseForm currentUser={currentUser} />
+
+      {/* Expense List shows Firestore expenses and allows deletion */}
+      <ExpenseList expenses={expenses} handleDelete={handleDelete} />
     </div>
   );
 }

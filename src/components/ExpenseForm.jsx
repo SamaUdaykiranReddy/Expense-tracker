@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function ExpenseForm({ addExpense }) {
+function ExpenseForm({ addExpense,currentUser }) {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Other");
@@ -8,7 +8,12 @@ function ExpenseForm({ addExpense }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title || !amount) return;
-    addExpense({ title, amount: parseFloat(amount), category });
+    addExpense({
+      title,
+      amount: parseFloat(amount),
+      category,
+      userId: currentUser.uid,
+    });
     setAmount("");
     setTitle("");
   };

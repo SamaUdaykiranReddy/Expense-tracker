@@ -1,67 +1,47 @@
 import { useState, useEffect } from "react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "./firebaseConfig";
+import SignUp from "./components/signUp";
+import LogIn from "./components/LogIn";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
-import "./App.css";
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "./firebaseConfig";
 
 function App() {
-  const [filterCategory, setFilterCategory] = useState("All");
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem("expenses");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const expensesCollection = collection(db, "expenses");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [expenses, setExpenses] = useState([]);
 
-  const addExpense = async(expense) => {
-     await addDoc(expensesCollection,expense);
-  };
   useEffect(() => {
-    const unsubscribe = onSnapshot(expensesCollection, (snapshot) => {
-      const expenseData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })); setExpenses(expenseData);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
     });
-    return ()=>unsubscribe();
-  },[]);
-  const handleDelete = async(id) => {
-    const expenseDoc = doc(db,"expenses",id);
-    await deleteDoc(expenseDoc);
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = () => signOut(auth);
+
+  const addExpense = (expense) => {
+    setExpenses((prev) => [...prev, expense]);
   };
+
+  if (!currentUser) {
+    return (
+      <div>
+        <SignUp setCurrentUser={setCurrentUser} />
+        <hr />
+        <LogIn setCurrentUser={setCurrentUser} />
+      </div>
+    );
+  }
+
   return (
     <div className="container mt-4">
-      <h2 className="mb-3">Expense Tracker</h2>
-      <ExpenseForm addExpense={addExpense} />
-      <div className="mb-4">
-        <select
-          class="form-select mb-3 w-50"
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          aria-label="Default select example"
-        >
-          <option value="All">All</option>
-          <option value="Food">Food</option>
-           <option value="Travel">Travel</option>
-          <option value="Basic">Basic</option>
-          <option value="Groceries">Groceries</option>
-          <option value="Entertainment">Entertainment</option>
-        </select>
-      </div>
-      <ExpenseList
-        expenses={
-          filterCategory === "All"
-            ? expenses
-            : expenses.filter((e) => e.category === filterCategory)
-        }
-        handleDelete={handleDelete}
-      />
+      <h2>Expense Tracker</h2>
+      <h5>Welcome, {currentUser.email}</h5>
+      <button className="btn btn-warning mb-3" onClick={handleLogout}>
+        Logout
+      </button>
+      <ExpenseForm addExpense={addExpense} currentUser={currentUser} />
+      <ExpenseList expenses={expenses} currentUser={currentUser} />
     </div>
   );
 }

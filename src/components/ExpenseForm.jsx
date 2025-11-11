@@ -1,22 +1,33 @@
 import { useState } from "react";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
-function ExpenseForm({ addExpense,currentUser }) {
+function ExpenseForm({ currentUser }) {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Other");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !amount) return;
-    addExpense({
-      title,
-      amount: parseFloat(amount),
-      category,
-      userId: currentUser.uid,
-    });
-    setAmount("");
-    setTitle("");
+    if (!title || !amount || !category || !currentUser) return;
+
+    try {
+      await addDoc(collection(db, "expenses"), {
+        title,
+        amount: parseFloat(amount),
+        category,
+        userId: currentUser.uid,
+        timestamp: serverTimestamp(),
+      });
+
+      setTitle("");
+      setAmount("");
+      setCategory("Other");
+    } catch (err) {
+      console.error("Error adding expense:", err);
+    }
   };
+
   return (
     <form onSubmit={handleSubmit} className="mb-3">
       <input
@@ -39,7 +50,6 @@ function ExpenseForm({ addExpense,currentUser }) {
         className="form-control mb-3 w-50"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
-        aria-label="Default select example"
       >
         <option>Select the Category</option>
         <option value="Basic">Basic</option>
@@ -48,10 +58,11 @@ function ExpenseForm({ addExpense,currentUser }) {
         <option value="Entertainment">Entertainment</option>
         <option value="Groceries">Groceries</option>
       </select>
-      <button className="btn btn-primary w-10 " type="submit">
+      <button className="btn btn-primary w-10" type="submit">
         Add Expense
       </button>
     </form>
   );
 }
+
 export default ExpenseForm;
